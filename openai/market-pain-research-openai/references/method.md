@@ -123,7 +123,8 @@ A speaker who merely works at a software company is not a vendor when they descr
 These rules are part of the method, not an add-on. A run that breaks them produces evidence the user cannot use.
 
 - **Read only.** Never post, comment, vote, message, register, or log in to read. Never recruit.
-- **Respect blocks.** If a site returns a block, a login wall, a rate limit or a bot challenge, pause once and retry once; then skip it and record it as blocked. Do not use proxies, cache or archive mirrors, or other workarounds. An official syndication channel (a marketplace that displays a review site's reviews under licence) is fine.
+- **One access path.** Read pages with the web retrieval tool, or with a browser tool when a page needs rendering. Do not read sources with shell downloads (curl, wget) or scripts. One path keeps the access record honest: each page was either read or blocked.
+- **Respect blocks.** If a site returns a block (such as a 403), a login wall, a rate limit or a bot challenge, pause once and retry once; then skip it and record it as blocked. A block from any tool is a block for that page: do not request the page again through another tool to get past it. Do not use proxies, cache or archive mirrors, or other workarounds. Official syndication is fine: a marketplace that displays a review site's reviews under licence, or a licensed partner that republishes the same article (a news portal carrying a broadcaster's story). Cite the page you read.
 - **Respect tool and platform policy.** If a site is off limits to your tools, skip it and record the gap.
 - **Respect community rules.** Skip any community whose rules forbid research or recruiting, even if the user has access.
 - **Browser automation is optional.** If you use it, open your own tab, decline non-essential cookies, and never enter credentials.

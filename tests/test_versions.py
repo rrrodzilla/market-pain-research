@@ -146,6 +146,7 @@ class VersionCompatibility(unittest.TestCase):
             self.assertEqual(by_name["Records arrive late"]["total"], 20)
             self.assertEqual(by_name["Records arrive late"]["vendor"], 4)
             self.assertEqual(by_name["Records arrive late"]["confidence"], "High")
+            self.assertEqual(by_name["Records arrive late"]["value"], "Both")
             self.assertEqual(by_name["Handoffs fail"]["group"], "vendor-heavy")
             self.assertEqual(by_name["Follow-up takes time"]["confidence"], "Medium")
             self.assertEqual(by_name["Missing context"]["confidence"], "Low")

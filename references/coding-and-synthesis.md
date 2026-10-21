@@ -89,7 +89,7 @@ The build writes `build/`. Every number in the deliverable comes from these file
 | File | Use |
 |---|---|
 | `totals.md` | Evidence base table; group totals for the executive summary; findings outside every theme; findings by job area (for gaps); sites read |
-| `theme-stats.md` / `.json` | Theme table, confidence, limits, evidence IDs, value counts |
+| `theme-stats.md` / `.json` | Theme table, confidence, limits, evidence IDs, value counts and value |
 | `vocabulary.md` | Word and force tallies |
 | `evidence-index.md` | The index tab, as is |
 | `chart-module.jsx` / `theme-chart.svg` | The chart |
@@ -109,6 +109,8 @@ The script applies these rules. Do not override them by judgment; if a rule prod
 | Low | Fewer than 8 findings, or vendors supply half or more |
 | Medium | Everything else |
 
+**Value per theme.** A finding marked `both` counts toward each kind. A kind qualifies when its findings make up at least a third of the theme's findings that have a value. The theme is Both when both kinds qualify; otherwise it takes the one kind that does: Relieves pain, or Saves or makes money.
+
 **Evidence groups.** Every theme falls into exactly one group. The groups, not a product lens, organize the executive summary.
 
 | Group | Rule | What it means for the reader |
@@ -123,7 +125,7 @@ A finding counts once under each theme it supports, so theme totals add up to mo
 
 Write `synthesis.md` before drafting the deliverable. It is a working file for you, not for the reader, and it holds:
 
-1. **Theme sheet.** For each theme: number, name, pain statement, value (relieves pain, saves or makes money, or both, from the value counts: call it "both" when each kind supplies at least a third), confidence, group, limit, and three to five representative finding IDs with their phrases.
+1. **Theme sheet.** For each theme: number, name, pain statement, value (the `value` that `theme-stats.md` reports, from the rule in section 5), confidence, group, limit, and three to five representative finding IDs with their phrases.
 2. **Vocabulary.** From `vocabulary.md`: the ten most frequent terms with counts, and any contrast that shows how the market frames its problems (for example control and evidence words against speed and ease words). Report counts, not interpretations the counts do not support.
 3. **Reported numbers.** Every quantified cost, time, headcount or rate in the findings: the number, what it measures, the finding ID, and whether it is vendor-sourced. These are reported, not verified; the deliverable says so.
 4. **Job stories.** At least one for every high- and medium-confidence theme, in the form "When…, I want to…, so I can…", each citing the finding IDs it rests on. Build them from the findings' situations and words; do not invent circumstances.

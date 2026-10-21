@@ -107,7 +107,8 @@ The table below describes the original Claude package. The OpenAI capability mat
 Every collector prompt includes these rules:
 
 - Read only. Never post, comment, register, log in to read, or message anyone.
-- Never get around a block: no proxies, caches or archive mirrors. Blocked sites are recorded as gaps.
+- Read through the research tools (web retrieval, or a browser for pages that need rendering), never with shell downloads.
+- Never get around a block: no proxies, caches, archive mirrors or retries through another tool. Blocked sites are recorded as gaps. Licensed syndication, such as a partner site republishing the same article, is fine.
 - Skip communities whose rules forbid research.
 - Record forum, review and community speakers by role, never by name or handle. Keep quotes to 15 words.
 - Flag vendor voices. A finding is flagged when the speaker sells into the pain, advises buyers on it, cites a vendor-sponsored survey, or promotes their own offer in the same piece.
@@ -155,13 +156,13 @@ Run the compatibility suite with Python 3.9 or newer:
 python3 -m unittest discover -s tests -v
 ```
 
-The suite checks that the Claude runtime matches the baseline, that unchanged method and engine files remain identical, and that the OpenAI package runs after being copied outside the repository. A four-source fixture checks counts, vendor shares, confidence groups, evidence URLs, theme renumbering, chart output, and repeat builds. Both engines must produce byte-identical build files. The GitHub Actions workflow is configured to run these checks on Python 3.9 and 3.14.
+The suite checks that the Claude runtime matches the baseline, that shared method and engine files remain identical, and that the OpenAI package runs after being copied outside the repository. A four-source fixture checks counts, vendor shares, confidence groups, evidence URLs, theme renumbering, chart output, and repeat builds. Both engines must produce byte-identical build files. The GitHub Actions workflow is configured to run these checks on Python 3.9 and 3.14.
 
-The OpenAI copies of `method.md`, `frameworks.md`, `writing-standard.md`, `research_index.py`, and `chart-module.jsx` are intentionally identical to their root counterparts. The entrypoint, collection brief, coding reference, and deliverable reference are platform-specific; `runtime.md` is OpenAI-only. Review deliberate shared-method changes in both versions. Do not regenerate the Claude baseline just to make a failure disappear; update it only when an intentional Claude change has been reviewed and verified. The original baseline is commit `0826271`.
+The OpenAI copies of `method.md`, `frameworks.md`, `writing-standard.md`, `research_index.py`, and `chart-module.jsx` are intentionally identical to their root counterparts. The entrypoint, collection brief, coding reference, and deliverable reference are platform-specific; `runtime.md` is OpenAI-only. Review deliberate shared-method changes in both versions. Do not regenerate the Claude baseline just to make a failure disappear; update it only when an intentional Claude change has been reviewed and verified. The original baseline is commit `0826271`; the baseline file's `revisions` list records each reviewed change since.
 
-The legacy chart template remains in the OpenAI package because the unchanged engine's self-test checks its JSX output. OpenAI presentation uses the generated SVG and does not execute the Claude component.
+The legacy chart template remains in the OpenAI package because the shared engine's self-test checks its JSX output. OpenAI presentation uses the generated SVG and does not execute the Claude component.
 
-The frozen engine has 11 existing Ruff findings under the development machine's lint configuration, including regex aliases, string concatenation style, and its non-executable shebang. Both copies retain that baseline rather than mixing an engine cleanup into the port. The new compatibility tests pass that lint configuration without suppressions.
+The engine and the compatibility tests pass Ruff under the development machine's lint configuration without suppressions.
 
 Automated checks verify packaging and calculations. They do not establish live ChatGPT or Claude behavior, account-specific tool availability, or full research quality. The scenarios in `openai/evals/evals.json` are behavioral test specifications, not recorded passing results. Run them in each target host before claiming end-to-end support. No full live market study is included in the compatibility suite.
 

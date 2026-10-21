@@ -25,10 +25,11 @@ RUN_DIR layout (references/collection-brief.md defines the record format):
 Writes RUN_DIR/build/:
     findings.json      every kept finding, after coding
     evidence-index.md  one table per source type, for the index tab
-    totals.md          counts by source type, vendor counts, group totals
-    theme-stats.md     per-theme counts, vendor share, confidence, group
+    totals.md          counts by source type, vendor counts, group totals, sites read
+    theme-stats.md     per-theme counts, vendor share, confidence, group, value
     theme-stats.json   the same, machine-readable
-    vocabulary.md      tallies of the `words:` and `forces:` fields
+    vocabulary.md      tallies of the `words:` and `forces:` fields; spellings that
+                       differ only in case, apostrophes or punctuation count as one
     chart-rows.json    rows for the chart
     chart-module.jsx   Claude Docs widget module with rows, title, total filled in
     theme-chart.svg    static chart for HTML or Markdown deliverables
@@ -49,11 +50,14 @@ from pathlib import Path
 # Confidence rule. Keep in sync with references/coding-and-synthesis.md.
 HIGH_MIN_FINDINGS = 15  # High needs at least this many findings ...
 LOW_BELOW_FINDINGS = 8  # ... and fewer than this many is Low.
+# Value rule. Keep in sync with references/coding-and-synthesis.md.
+VALUE_SHARE = 3  # A kind counts when it reaches 1/VALUE_SHARE of the theme's valued findings.
 MAX_PHRASE_WORDS = 15  # Verbatim phrases stay short (copyright and privacy).
 MAX_CHART_NAME = 34  # Longer theme names collide with the chart's bars.
+MAX_TERM_WORDS = 3  # A `words:` term is the speaker's 1-3 word name for the pain.
 
 DEFAULT_TITLE = "CHART TITLE: state the finding as a sentence"
-VENDOR_RE = re.compile(r"^(yes|no|y|n|true|false|†)\b", re.I)
+VENDOR_RE = re.compile(r"^(yes|no|y|n|true|false|†)\b", re.IGNORECASE)
 
 # Display order of source types; unknown prefixes follow alphabetically.
 PREFIX_ORDER = "PNFRS"
@@ -83,8 +87,8 @@ def parse_fields(block: str) -> dict:
 def parse_vendor(value: str) -> tuple[bool, str]:
     """`yes (sells close software)` -> (True, 'sells close software')."""
     v = (value or "").strip()
-    is_vendor = bool(re.match(r"^(yes|y|true|†)\b", v, re.I))
-    reason = re.sub(r"^(yes|no|y|n|true|false|†)\W*", "", v, flags=re.I).strip(" ()-")
+    is_vendor = bool(re.match(r"^(yes|y|true|†)\b", v, re.IGNORECASE))
+    reason = re.sub(r"^(yes|no|y|n|true|false|†)\W*", "", v, flags=re.IGNORECASE).strip(" ()-")
     return is_vendor, reason
 
 
@@ -128,8 +132,22 @@ def parse_source(value: str) -> tuple[str | None, str, str]:
 def host(url: str | None) -> str:
     if not url:
         return ""
-    name = url.split("/")[2]
-    return name[4:] if name.startswith("www.") else name
+    return url.split("/")[2].removeprefix("www.")
+
+
+NAME_SEPARATOR_RE = re.compile(r"\s*[,;:(|]\s*|\s+[-–/]\s+")
+
+
+def name_stem(site: str) -> str:
+    """`Example Magazine, issue 12 teaser` -> `Example Magazine`: the name before its first separator."""
+    stem = NAME_SEPARATOR_RE.split(site or "", maxsplit=1)[0].strip()
+    return stem or (site or "").strip()
+
+
+def normalize_term(term: str) -> str:
+    """Fold spellings of one term together: `Workers’ comp.` and `workers comp` -> `workers comp`."""
+    text = re.sub(r"['’‘`]", "", (term or "").casefold())
+    return " ".join(re.sub(r"[^\w\s-]+", " ", text).split()).strip("-")
 
 
 def display_name(text: str, fallback: str) -> str:
@@ -143,7 +161,7 @@ def parse_raw_file(text: str, file_prefix: str) -> list[dict]:
     """Parse one raw file into finding dicts. A `same` source inherits the previous URL."""
     findings = []
     last = (None, "", "")
-    for part in re.split(r"^### ", text, flags=re.M)[1:]:
+    for part in re.split(r"^### ", text, flags=re.MULTILINE)[1:]:
         head, _, body = part.partition("\n")
         m = HEADER_RE.match(head.strip())
         if not m:
@@ -239,6 +257,18 @@ def limit_reason(total: int, vendor: int, n_types: int, min_types: int) -> str:
     return "; ".join(reasons)
 
 
+def value_class(counts: dict) -> str:
+    """Classify a theme from its value counts. A `both` finding counts toward each kind."""
+    valued = sum(counts.get(k, 0) for k in VALUE_KINDS)
+    if not valued:
+        return ""
+    pain = VALUE_SHARE * (counts.get("pain", 0) + counts.get("both", 0)) >= valued
+    money = VALUE_SHARE * (counts.get("money", 0) + counts.get("both", 0)) >= valued
+    if pain and money:
+        return "Both"
+    return "Relieves pain" if pain else "Saves or makes money"
+
+
 def theme_stats(findings: list[dict], themes: list[dict], prefixes: list[str]) -> list[dict]:
     """Per-theme counts. A finding counts once under each theme it supports."""
     min_types = min(4, len(prefixes)) or 1
@@ -253,6 +283,7 @@ def theme_stats(findings: list[dict], themes: list[dict], prefixes: list[str]) -
         n_types = sum(1 for c in by_type.values() if c)
         conf = confidence(total, vendor, n_types, min_types)
         t = names.get(n, {})
+        value_counts = {k: sum(1 for f in members if f["value"] == k) for k in VALUE_KINDS}
         out.append(
             {
                 "n": n,
@@ -267,7 +298,8 @@ def theme_stats(findings: list[dict], themes: list[dict], prefixes: list[str]) -
                 "confidence": conf,
                 "group": group_for(conf, total, vendor),
                 "limit": "" if conf == "High" else limit_reason(total, vendor, n_types, min_types),
-                "value_counts": {k: sum(1 for f in members if f["value"] == k) for k in VALUE_KINDS},
+                "value_counts": value_counts,
+                "value": value_class(value_counts),
                 "force_counts": {k: sum(1 for f in members if k in f["forces"]) for k in FORCE_KINDS},
                 "evidence_ids": [f["id"] for f in members if not f["vendor"]]
                 + [f["id"] + "†" for f in members if f["vendor"]],
@@ -319,6 +351,51 @@ def tally(items: list[list[str]]) -> list[tuple[str, int]]:
     return sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))
 
 
+def variant_tally(items: list[list[tuple[object, str]]]) -> list[tuple[object, int, dict[str, int]]]:
+    """Count each key once per item, and how often each variant (spelling) of it occurs."""
+    counts: dict = {}
+    variants: dict = {}
+    for pairs in items:
+        first: dict = {}
+        for key, variant in pairs:
+            first.setdefault(key, variant)
+        for key, variant in first.items():
+            counts[key] = counts.get(key, 0) + 1
+            spellings = variants.setdefault(key, {})
+            spellings[variant] = spellings.get(variant, 0) + 1
+    return [(key, counts[key], variants[key]) for key in counts]
+
+
+def most_frequent(variants: dict[str, int]) -> str:
+    return min(variants.items(), key=lambda kv: (-kv[1], kv[0]))[0]
+
+
+def ranked(rows: list[tuple[str, int]]) -> list[tuple[str, int]]:
+    return sorted(rows, key=lambda kv: (-kv[1], kv[0]))
+
+
+def term_tally(items: list[list[str]]) -> list[tuple[str, int]]:
+    """Tally terms, folding spellings together and showing the most frequent one."""
+    pairs = [[(normalize_term(w), w) for w in words if normalize_term(w)] for words in items]
+    return ranked([(most_frequent(v), c) for _, c, v in variant_tally(pairs)])
+
+
+def site_tally(findings: list[dict]) -> list[tuple[str, int]]:
+    """Findings per site, grouped by web host and name stem.
+
+    One site name shows as written; several (`Magazine, issue 12`, `Magazine, issue 13`)
+    show as their shared stem, so the label is true of every finding it counts.
+    """
+    pairs = [
+        [((host(f["url"]), name_stem(f["site"] or "unknown").casefold()), f["site"] or "unknown")]
+        for f in findings
+    ]
+    return ranked([
+        (next(iter(v)) if len(v) == 1 else name_stem(most_frequent(v)), c)
+        for _, c, v in variant_tally(pairs)
+    ])
+
+
 def checks(findings: list[dict], themes: list[dict], dropped: list[dict], chart_title: str = "") -> list[str]:
     problems = []
     if themes and chart_title in ("", DEFAULT_TITLE):
@@ -352,9 +429,10 @@ def checks(findings: list[dict], themes: list[dict], dropped: list[dict], chart_
             problems.append(f"{fid}: phrase is {words} words; trim to {MAX_PHRASE_WORDS} or mark (paraphrase)")
         if not f["value"]:
             problems.append(f"{fid}: value is not pain, money or both")
-        long_words = [w for w in f["words"] if len(w.split()) > 3]
+        long_words = [w for w in f["words"] if len(w.split()) > MAX_TERM_WORDS]
         if long_words:
-            problems.append(f"{fid}: words should be the speaker's own 1-3 word terms, not {long_words[0]!r}")
+            listed = ", ".join(repr(w) for w in long_words)
+            problems.append(f"{fid}: words should be the speaker's own 1-3 word terms; shorten {listed}")
         if f["unknown_forces"]:
             problems.append(f"{fid}: unknown forces {f['unknown_forces']}; use {', '.join(FORCE_KINDS)}")
         if themes and not f["themes"] and not f["uncoded"]:
@@ -414,23 +492,26 @@ def render_totals(findings: list[dict], names: dict, groups: list[dict]) -> str:
         lines.append(f"| {cell(area)} | {count} | {vendor} |")
     lines += ["", "## Sites read, with findings from each", ""]
     for p in sorted(names, key=prefix_key):
-        sites = tally([[f["site"] or "unknown"] for f in findings if f["prefix"] == p])
+        sites = site_tally([f for f in findings if f["prefix"] == p])
         lines.append(f"- {names[p]}: " + ", ".join(f"{s} ({c})" for s, c in sites))
     return "\n".join(lines)
 
 
 def render_stats(stats: list[dict]) -> str:
     lines = [
-        "| # | Theme | Findings | Indep. | Vendor | Vendor % | Source types | Confidence | Group "
-        "| Pain/money/both | Limit | Evidence |",
-        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+        (
+            "| # | Theme | Findings | Indep. | Vendor | Vendor % | Source types | Confidence | Group "
+            "| Pain/money/both | Value | Limit | Evidence |"
+        ),
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for s in stats:
         v = s["value_counts"]
         lines.append(
             f"| {s['n']} | {cell(s['name'])} | {s['total']} | {s['independent']} | {s['vendor']} | "
             f"{s['vendor_pct']}% | {s['source_types']}/{s['min_types']} | {s['confidence']} | {s['group']} | "
-            f"{v['pain']}/{v['money']}/{v['both']} | {cell(s['limit'])} | {', '.join(s['evidence_ids'])} |"
+            f"{v['pain']}/{v['money']}/{v['both']} | {s['value']} | {cell(s['limit'])} | "
+            f"{', '.join(s['evidence_ids'])} |"
         )
     return "\n".join(lines)
 
@@ -494,15 +575,23 @@ def render_svg(rows: list[dict], title: str, total: int) -> str:
         return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("'", "&#39;")
 
     out = [
-        f"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 760 {height}' role='img' "
-        f"aria-label='{esc(title)}' font-family='system-ui, sans-serif' font-size='12'>",
+        (
+            f"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 760 {height}' role='img' "
+            f"aria-label='{esc(title)}' font-family='system-ui, sans-serif' font-size='12'>"
+        ),
         f"<text x='16' y='28' font-size='16' font-weight='600' fill='{ink}'>{esc(title)}</text>",
-        f"<text x='16' y='52' font-size='13' fill='{quiet}'>Bold: themes where vendors or consultants "
-        f"supply a third or more of the findings.</text>",
-        f"<rect x='16' y='68' width='12' height='12' fill='{grey}'/>"
-        f"<text x='34' y='78' fill='{quiet}'>Independent voices</text>",
-        f"<rect x='246' y='68' width='12' height='12' fill='{blue}'/>"
-        f"<text x='264' y='78' fill='{quiet}'>Vendor or consultant voices</text>",
+        (
+            f"<text x='16' y='52' font-size='13' fill='{quiet}'>Bold: themes where vendors or consultants "
+            f"supply a third or more of the findings.</text>"
+        ),
+        (
+            f"<rect x='16' y='68' width='12' height='12' fill='{grey}'/>"
+            f"<text x='34' y='78' fill='{quiet}'>Independent voices</text>"
+        ),
+        (
+            f"<rect x='246' y='68' width='12' height='12' fill='{blue}'/>"
+            f"<text x='264' y='78' fill='{quiet}'>Vendor or consultant voices</text>"
+        ),
     ]
     for i, r in enumerate(rows):
         y = y0 + i * rh
@@ -589,7 +678,7 @@ def build(run_dir: Path, chart_title: str) -> dict:
     write("theme-stats.json", json.dumps({"themes": stats, "groups": groups}, indent=1, ensure_ascii=False))
     write(
         "vocabulary.md",
-        render_tally(tally([f["words"] for f in findings]), "Word")
+        render_tally(term_tally([f["words"] for f in findings]), "Word")
         + "\n\n"
         + render_tally(tally([f["forces"] for f in findings]), "Force"),
     )
@@ -659,7 +748,7 @@ SAMPLE_F = """# Practitioner forums
 - phrase: "intercompany never ties out and I rebuild the eliminations every single month from scratch by hand again"
 - context: Manual eliminations every month.
 - value: relieves pain
-- words: manual
+- words: manual, workers' comp
 
 ### F02. Consultant on vendor sprawl
 - source: https://www.forum.example.org/q/2 | Example Forum | 2025-11-02
@@ -683,7 +772,7 @@ SAMPLE_F2 = """# Follow-up forum collection
 - phrase: "still reconciling by hand"
 - context: Manual reconciliation.
 - value: relieves pain
-- words: manual
+- words: manual, Workers comp, chasing every unpaid invoice, rained off again today
 - job area: close
 """
 
@@ -732,6 +821,11 @@ def selftest() -> None:
         assert confidence(7, 0, 4, 4) == "Low"
         assert group_for("Medium", 6, 2) == "vendor-heavy"  # 2 of 6 is a third
         assert group_for("Medium", 14, 1) == "independent but limited"
+        assert stats[1]["value"] == "Both", stats[1]["value_counts"]  # a `both` finding counts toward each kind
+        assert value_class({"pain": 5, "money": 1, "both": 0}) == "Relieves pain"
+        assert value_class({"pain": 4, "money": 2, "both": 0}) == "Both"  # exactly a third qualifies
+        assert value_class({"pain": 0, "money": 3, "both": 0}) == "Saves or makes money"
+        assert value_class({"pain": 0, "money": 0, "both": 0}) == ""
 
         problems = (run / "build" / "checks.md").read_text(encoding="utf-8")
         assert "theme 3: defined in themes.json but no finding supports it" in problems
@@ -739,6 +833,7 @@ def selftest() -> None:
         assert "F02: vendor must start with yes or no" in problems
         assert "F02: unknown forces ['negative job']" in problems
         assert "F02: no themes coded" not in problems, "uncoded findings must not be flagged"
+        assert "shorten 'chasing every unpaid invoice', 'rained off again today'" in problems, problems
         assert "chart: title" not in problems
         assert any(p.startswith("chart: title") for p in checks(findings, themes, [], DEFAULT_TITLE))
         assert "P03: dropped (duplicate of P01)" in problems
@@ -748,6 +843,16 @@ def selftest() -> None:
         totals = (run / "build" / "totals.md").read_text(encoding="utf-8")
         assert "- Expert podcasts and interviews: Example Show (2)" in totals, totals
         assert "Findings outside every theme: 1 (F02)" in totals and "| tools | 1 | 0 |" in totals, totals
+        vocabulary = (run / "build" / "vocabulary.md").read_text(encoding="utf-8")
+        assert "| workers comp | 2 |" in vocabulary and "workers' comp" not in vocabulary, vocabulary
+        assert normalize_term("Workers’ comp.") == "workers comp"
+        assert normalize_term("pay-as-you-go") == "pay-as-you-go"
+        teasers = [{"url": f"https://mag.example/{i}", "site": f"Example Magazine, issue {i} teaser"} for i in (1, 2, 2)]
+        assert site_tally([*teasers, {"url": "https://mag.example/", "site": "Example Magazine"}]) == [
+            ("Example Magazine", 4)
+        ]
+        shows = [{"url": "https://video.example/a", "site": "Show A, Ep 1"}, {"url": "https://video.example/b", "site": "Show B"}]
+        assert site_tally(shows) == [("Show A, Ep 1", 1), ("Show B", 1)], "distinct names on one host stay apart"
         module = (run / "build" / "chart-module.jsx").read_text(encoding="utf-8")
         assert "__" not in module, "a placeholder was left in the chart module"
         assert "Test title (with) ’quotes’" in module and "more than 5" in module

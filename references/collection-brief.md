@@ -79,7 +79,7 @@ Collected: 2026-10-21 by one collector. Market: <one-line market definition>.
 | `context:` | One or two sentences in the collector's own words: what they were trying to do, what got in the way, how they cope today. |
 | `value:` | `relieves pain`, `saves or makes money`, or `both`. |
 | `forces:` | Any of `push, pull, anxiety, habit, workaround`, comma-separated, or `none`. |
-| `words:` | One to three of the speaker's own terms for the pain, comma-separated, lowercase, each one to three words. Not the collector's words. `none` if the speaker used only generic language. |
+| `words:` | One to three of the speaker's own terms for the pain, comma-separated, lowercase, each one to three words. Not the collector's words. If the speaker's expression is longer, keep its one-to-three-word core, or hyphenate a fixed expression (pay-as-you-go); the script flags longer terms. `none` if the speaker used only generic language. |
 | `job area:` | Exactly one entry from the job-area list in the plan. |
 
 Do not add a `themes:` field during collection. Themes are coded later, across all slices, in `coding.json`.
@@ -103,7 +103,9 @@ Search patterns that work: {two or three patterns adapted to the market}.
 
 ACCESS RULES
 - Read only. Never post, comment, register, or log in to read.
-- If a page blocks you (403, 429, login wall, bot challenge), pause, retry once, then skip it and note it as blocked. Never use proxies, cache or archive mirrors, or other workarounds. Official syndication (for example a marketplace that shows a review site's reviews) is fine.
+- Read pages with the web fetch tool, or the browser when a page needs rendering. Never read sources with shell downloads (curl, wget) or scripts.
+- If a page blocks you (403, 429, login wall, bot challenge), pause, retry once, then skip it and note it as blocked. A block from any tool counts: never request the same page through another tool to get past it. Never use proxies, cache or archive mirrors, or other workarounds.
+- Official syndication is fine: a marketplace that shows a review site's reviews, or a licensed partner that republishes the same article (for example a news portal carrying a radio station's story). Cite the page you read.
 - If a site is off limits to your tools, skip it.
 - Browser tools are optional. If you use them, open your own tab, decline non-essential cookies, never enter credentials.
 - Prefer content from {recency window, default: the last three years}.
@@ -121,7 +123,7 @@ Use exactly this format for every finding:
 - context: one or two sentences in your own words: what they tried to do, what got in the way, how they cope
 - value: relieves pain | saves or makes money | both
 - forces: any of push, pull, anxiety, habit, workaround (or none)
-- words: one to three of the speaker's own terms for the pain, lowercase, comma-separated
+- words: one to three of the speaker's own terms for the pain, lowercase, comma-separated; each term one to three words (keep the core of a longer expression, or hyphenate a fixed one such as pay-as-you-go)
 - job area: one of {job-area list}
 
 Notice findings that answer these questions:

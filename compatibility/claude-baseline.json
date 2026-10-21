@@ -1,15 +1,27 @@
 {
   "baseline_commit": "0826271",
+  "revisions": [
+    {
+      "date": "2026-10-21",
+      "reason": "Fixes from the first full test run: every over-long term is reported, sites read are grouped by host and name, vocabulary folds spellings, each theme gets a computed value class, collectors use one access path, and the 11 Ruff findings are fixed.",
+      "files": [
+        "references/coding-and-synthesis.md",
+        "references/collection-brief.md",
+        "references/method.md",
+        "scripts/research_index.py"
+      ]
+    }
+  ],
   "sha256": {
     "SKILL.md": "f539611340879ce0c153b3d2015010eaf896060cc5e87120ee7751d754cc9f18",
     "evals/evals.json": "eb0478605f97430b1b0266b66b836ff65c63d31c5cb1dec62d66394712928de1",
-    "references/coding-and-synthesis.md": "dbc97eab77204b8fc30e5512b02309f587d900b0fdb4c5605175486ca419217b",
-    "references/collection-brief.md": "770903c1a9516e4a7aac1b335ba3834ae3fe9a2fc6f5fb2b2f112769ffca9f26",
+    "references/coding-and-synthesis.md": "e8a0b7f57a9d7a26af62ed111c1c7d76180b14e90c947a7f137c354e2e5c9e26",
+    "references/collection-brief.md": "974340acbbf8b06889173ba266c701ebda2db6aaa3c9cb7fbb103805e6b69238",
     "references/deliverable.md": "317a92f1b0f5d7a468b711b274ce063d43e90979f26b2ded501d49118797a9c3",
     "references/frameworks.md": "ea9e5bc13f0af0f2f0e63bffd7a01df3eea3323dd897dff2d6cffbd833d567ab",
-    "references/method.md": "5b382e216b6220a40241440775ffeb16ccfc583deb730003d2e1d63817eb60c8",
+    "references/method.md": "ec26fa3216a814ad127c4fcf6654d88a719e65763287cc9c27751aacb3f9eff1",
     "references/writing-standard.md": "1d71bb301aa54481438118ad0f6d5026d6ebfaff1f39571439cb245d3d1500c0",
-    "scripts/research_index.py": "83967daef3c8e2dc73377879ff11db21202ec56325dd8e61a85d287584c40d0d",
+    "scripts/research_index.py": "e5b158c48b358bc67153107feb5b3004e866b5f777f043ab34b44d0f342281ff",
     "assets/chart-module.jsx": "a4c6731696ba74f466ee1d177d62f69d306fc49ec66e72d3ca61e3a77d32cc08"
   }
 }
