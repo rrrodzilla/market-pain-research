@@ -1,0 +1,132 @@
+# market-pain-research
+
+A Claude skill that finds out what a market struggles with, in its own words, and delivers a review document you can decide from. You name a market, for example "small window cleaning businesses" or "independent veterinary clinic owners". The skill reads where that market already talks, codes 100 to 200 findings into ranked themes, and reports how well the evidence supports each theme, including how much of it comes from people who sell into the problem.
+
+The research is passive. It reads public forums, podcasts, trade press and product reviews, plus any communities you name (such as Slack channels you belong to), without posting, registering or contacting anyone.
+
+## What you get
+
+One document with two parts:
+
+- **Findings.** A one-page executive summary with a table of decisions for the reader, then the evidence base, a ranked chart of themes, theme detail with confidence ratings, the market's own vocabulary, reported numbers for sizing, job stories to test in interviews, adoption risks, gaps and next steps.
+- **Evidence index.** Every finding ID with its title, speaker role and source link, so any claim traces back to its source in one click.
+
+With the Claude Docs connector, this is one doc with two tabs. Without it, the skill builds an HTML page with two tabs where it can publish one, and otherwise writes `findings.md` and `evidence-index.md`.
+
+Every count, percentage and confidence rating comes from a bundled script, not from the model's arithmetic.
+
+## How a run works
+
+1. **Plan.** Sharpen the market definition, fix the list of job areas, and pick candidate sites for four source types: expert voices (podcasts and interviews), newsletters and trade press, peer forums, and reviews of the market's tools.
+2. **Collect.** Four or five research agents run in parallel, one per source type. Each records 25 to 40 findings in a strict format: source link, speaker role, vendor flag, a short quote, context, value, forces, the speaker's own terms, and job area.
+3. **Check.** The script flags format problems. Duplicates are dropped with a reason, and every vendor flag is audited again.
+4. **Code.** Findings are grouped into 10 to 16 themes, each named as a problem. The script ranks the themes and applies a fixed confidence rule.
+5. **Write.** The deliverable follows a strict plain-language standard, and every number in it is checked against the script's output.
+
+A full run usually takes 30 to 60 minutes.
+
+## Install
+
+For Claude Code, at the user level:
+
+```bash
+git clone https://github.com/rrrodzilla/market-pain-research.git ~/.claude/skills/market-pain-research
+```
+
+For a single project, clone it into `.claude/skills/market-pain-research` inside that project instead. The skill is a self-contained folder with a `SKILL.md`, so any client that loads Agent Skills can use it.
+
+## Use
+
+Invoke it by name, or describe the research you want:
+
+```text
+/market-pain-research find the pains for small window cleaning businesses
+```
+
+```text
+What do residential HVAC contractors complain about most? Dig through forums and reviews and give me a findings writeup with sources.
+```
+
+```text
+Research mid-market supply chain planners. Also include the #general and #planning channels of a Slack I'm in.
+```
+
+| Input | Required | Default |
+|---|---|---|
+| Target market | Yes | A rough description is enough; the skill sharpens it in its plan |
+| Specific sources (Slack groups, Discord servers, forums, publications) | No | The four default source types |
+| Purpose or decision context | No | A neutral purpose: which problems the market reports most, and how well the evidence supports each |
+| Where to save working files | No | `research/pain-<market>-<date>/` in the working directory |
+
+## Requirements
+
+| Capability | Used for | If missing |
+|---|---|---|
+| Web search and fetch | Finding and reading sources | Required |
+| Sub-agents | Parallel collection | Source types are collected one after another |
+| Python 3.9+ (standard library only) | Counts, tables and the chart | The skill computes the tables by hand from the same rules |
+| Claude Docs connector | The two-tab document | An HTML page, otherwise Markdown files |
+| Connectors for named sources (for example Slack) | Reading communities you belong to | That source is skipped |
+| Browser automation | Pages that need rendering | Optional |
+
+## Research rules
+
+Every collector prompt includes these rules:
+
+- Read only. Never post, comment, register, log in to read, or message anyone.
+- Never get around a block: no proxies, caches or archive mirrors. Blocked sites are recorded as gaps.
+- Skip communities whose rules forbid research.
+- Record forum, review and community speakers by role, never by name or handle. Keep quotes to 15 words.
+- Flag vendor voices. A finding is flagged when the speaker sells into the pain, advises buyers on it, cites a vendor-sponsored survey, or promotes their own offer in the same piece.
+- Stay neutral. The analysis never assumes a product or goal that the user did not state.
+
+## Confidence rule
+
+| Level | Rule |
+|---|---|
+| High | 15 or more findings, from at least four source types (or every type collected, if fewer), with under a third from vendors or consultants |
+| Low | Fewer than 8 findings, or half or more from vendors or consultants |
+| Medium | Everything else |
+
+## Repository layout
+
+| Path | Contents |
+|---|---|
+| `SKILL.md` | The workflow Claude follows |
+| `references/method.md` | Market definition, where to look, what counts as a finding, access and privacy rules |
+| `references/frameworks.md` | The reasoning behind job areas, forces, job stories and buyer interviews |
+| `references/collection-brief.md` | Record format and the collector prompt template |
+| `references/coding-and-synthesis.md` | Deduplication, vendor audit, theme coding, confidence rule, synthesis notes |
+| `references/deliverable.md` | Outline and section specifications for both parts, build notes, fallbacks, final checks |
+| `references/writing-standard.md` | The plain-language writing standard and its revision rubric |
+| `scripts/research_index.py` | Parses findings, applies coding, and writes every count, table and chart |
+| `assets/chart-module.jsx` | The chart template that the script fills for Claude Docs |
+| `evals/evals.json` | Test prompts for evaluating the skill |
+
+The script also runs on its own:
+
+```bash
+python3 scripts/research_index.py --selftest
+python3 scripts/research_index.py <run folder> [--renumber] [--chart-title "The main finding, as a sentence"]
+```
+
+## Limits
+
+- The research shows where a market reports pain, not who will pay to remove it. The job stories are hypotheses for buyer interviews; the deliverable plans those interviews, but the skill does not run them.
+- Coverage depends on what is public and readable by research tools. Some large communities, such as Reddit and closed Facebook groups, are often out of reach, and the report lists them as gaps.
+- Numbers quoted in findings are self-reported by individual speakers and are not verified.
+
+## Acknowledgements
+
+The method condenses ideas from these works, summarized in the skill's own words in `references/`:
+
+- Amy Hoy, Sales Safari (taught in 30x500 with Alex Hillman)
+- Jim Kalbach, *The Jobs To Be Done Playbook*
+- Superfounder, *Jobs to Be Done: How to Find Painkillers and Money Multipliers*
+- Alexander Osterwalder, Yves Pigneur, Greg Bernarda and Alan Smith, *Value Proposition Design*
+- Alex Hormozi, *$100M Offers*
+- Jean-luc Doumont, *Trees, Maps, and Theorems*
+
+## License
+
+MIT. See [LICENSE](LICENSE).

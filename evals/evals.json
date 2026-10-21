@@ -1,0 +1,23 @@
+{
+  "skill_name": "market-pain-research",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Research the pain points of independent veterinary clinic owners and practice managers in the US. I want to know where, if anywhere, there's a problem worth building for. Put the results in a doc I can share with my cofounder.",
+      "expected_output": "A two-part deliverable (Findings with a one-page executive summary and decisions table; Evidence index with every finding linked) built from four source types, with themes ranked by evidence, vendor share and confidence per theme, and no product framing or method names in the prose.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Do a sales safari on mid-market supply chain planners (demand planners, S&OP leads at $100M-$1B manufacturers). Also include the #general and #planning channels of the Supply Chain Leaders Slack I'm in. I work at a forecasting startup but keep the research unbiased.",
+      "expected_output": "Plan includes a rules check and an access check for the named Slack channels, an S slice that paraphrases by default and records roles only, and a deliverable whose purpose comes from the user's words without mapping themes to the user's startup.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "What do residential HVAC contractors complain about most? Dig through forums and reviews and give me a findings writeup with sources.",
+      "expected_output": "Source types adapted to a trade market (for example contractor forums, trade publications, supplier and software reviews, video or podcast interviews), job areas derived from the contractor's job, and the same two-part deliverable with evidence groups and gaps.",
+      "files": []
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+
+# Skill eval workspaces and research runs (regenerable, may hold collected data)
+*-workspace/
+research/
+
+# OS and editor junk
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.vscode/
+.idea/
