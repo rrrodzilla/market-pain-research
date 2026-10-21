@@ -1,0 +1,4 @@
+interface:
+  display_name: "Market Pain Research (OpenAI)"
+  short_description: "Research market pains with traceable evidence"
+  default_prompt: "Use $market-pain-research-openai to research a target market's pains and produce evidence-ranked findings with sources."
